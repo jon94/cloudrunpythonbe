@@ -25,6 +25,7 @@ COPY . .
 ENV FLASK_APP=application.py
 ENV DD_SERVICE=cloudrun-python
 ENV DD_ENV=cloudrun
+ENV DD_APPSEC_ENABLED=1
 ENV DD_VERSION=1
 
 # Expose the application port
