@@ -14,7 +14,7 @@ COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
 # Install ddtrace to a specific target directory
 RUN pip install --target /dd_tracer/python/ ddtrace
 
-Debugging step to verify file exists
+# Debugging step to verify file exists
 RUN ls /app
 # RUN chmod +x /app/datadog-init
 
