@@ -16,6 +16,7 @@ RUN pip install --target /dd_tracer/python/ ddtrace
 
 # Debugging step to verify file exists
 RUN ls /app
+RUN chmod +x /app/datadog-init
 
 # Copy the rest of the application code
 COPY . .
