@@ -10,8 +10,9 @@ WORKDIR /flask_backend
 
 COPY requirements.txt /flask_backend/requirements.txt 
 #package*.json./
-
 RUN pip3 install -r requirements.txt
+COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
+RUN pip install --target /dd_tracer/python/ ddtrace
 
 COPY . .
 #copies everything in the root directory to the container
