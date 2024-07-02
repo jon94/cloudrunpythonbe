@@ -23,7 +23,6 @@ COPY . .
 
 # Set environment variables
 ENV FLASK_APP=application.py
-ENV PORT=5500
 ENV DD_SERVICE=cloudrun-python
 ENV DD_ENV=cloudrun
 ENV DD_VERSION=1
