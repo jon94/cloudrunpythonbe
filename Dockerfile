@@ -8,15 +8,15 @@ WORKDIR /flask_backend
 COPY requirements.txt /flask_backend/requirements.txt 
 RUN pip3 install -r requirements.txt
 
-# Copy Datadog serverless-init
-COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
+# # Copy Datadog serverless-init
+# COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
 
-# Install ddtrace to a specific target directory
-RUN pip install --target /dd_tracer/python/ ddtrace
+# # Install ddtrace to a specific target directory
+# RUN pip install --target /dd_tracer/python/ ddtrace
 
 # Debugging step to verify file exists
-RUN ls /app
-RUN chmod +x /app/datadog-init
+# RUN ls /app
+# RUN chmod +x /app/datadog-init
 
 # Copy the rest of the application code
 COPY . .
@@ -35,6 +35,9 @@ EXPOSE 5500
 ARG DD_GIT_COMMIT_SHA
 ENV DD_TAGS="git.repository_url:github.com/jon94/cloudrunpythonbe,git.commit.sha:${DD_GIT_COMMIT_SHA}"
 
+# # Entry point and command to run the application
+# ENTRYPOINT ["/app/datadog-init"]
+# CMD ["/dd_tracer/python/bin/ddtrace-run", "python", "application.py"]
+
 # Entry point and command to run the application
-ENTRYPOINT ["/app/datadog-init"]
-CMD ["/dd_tracer/python/bin/ddtrace-run", "python", "application.py"]
+CMD ["python", "application.py"]
