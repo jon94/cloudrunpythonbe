@@ -26,7 +26,7 @@ ENV DD_VERSION=1
 EXPOSE 5500
 
 ARG DD_GIT_COMMIT_SHA
-ENV DD_TAGS="git.repository_url:github.com/jon94/fargatepythonbackend,git.commit.sha:${DD_GIT_COMMIT_SHA}"
+ENV DD_TAGS="git.repository_url:github.com/jon94/cloudrunpythonbe,git.commit.sha:${DD_GIT_COMMIT_SHA}" 
 
 
 ENTRYPOINT ["/app/datadog-init"]
