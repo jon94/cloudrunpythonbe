@@ -1,0 +1,124 @@
+name: Docker Image CI 
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:  
+
+jobs:     
+  build_test_push:
+    name: build_test_push
+    permissions: write-all
+    runs-on: ubuntu-latest 
+    outputs:
+      deploy-start: ${{ steps.deploy_start.outputs.DEPLOY_START }}  # outputs for env variables to be used between jobs
+    env:
+      DOCKER_REPOSITORY: jonlimpw # name of Docker Hub ID
+      IMAGE_NAME: cloudrunpythonbe
+      
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v5.0.0   
+
+    - name: Check code meets quality standards
+      id: datadog-static-analysis
+      uses: DataDog/datadog-static-analyzer-github-action@v1
+      with:
+        dd_app_key: ${{ secrets.DD_APP_KEY }}
+        dd_api_key: ${{ secrets.DD_API_KEY }}
+        dd_service: fargate-ecs-backend
+        dd_env: ci 
+        cpu_count: 2
+        enable_performance_statistics: false
+
+    - name: Check imported libraries are secure and compliant (DD SBOM Generate and Upload)
+      id: datadog-software-composition-analysis
+      uses: DataDog/datadog-sca-github-action@main
+      with:
+        dd_api_key: ${{ secrets.DD_API_KEY }}
+        dd_app_key: ${{ secrets.DD_APP_KEY }}
+        dd_service: fargate-ecs-backend
+        dd_env: ci
+        dd_site: datadoghq.com 
+        
+    - name: Install Datadog CLI
+      run: npm install --save-dev @datadog/datadog-ci
+
+    # - name: Quality Gates
+    #   id: quality_gates
+    #   run: |
+    #     DD_SITE=datadoghq.com \
+    #     DD_API_KEY=${{ secrets.DD_API_KEY }} \
+    #     DD_APP_KEY=${{ secrets.DD_APP_KEY }} \
+    #     npx datadog-ci gate evaluate
+          
+    - name: Build Docker Image 
+      uses: mr-smithers-excellent/docker-build-push@v4
+      with:
+        image: ${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}
+        registry: docker.io
+        tag: latest
+        buildArgs: 'DD_GIT_REPOSITORY_URL=github.com/jon94/fargatepythonbackend,DD_GIT_COMMIT_SHA=$(git rev-parse HEAD)'
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: Set deploy start time # Assumes that deployment happens here. Start deployment time here.
+      id: deploy_start
+      run: |
+        echo "DEPLOY_START=$(date +%s)" >> $GITHUB_OUTPUT # Set deploy_start in environment file so it can be used across jobs   
+        
+    - name: Datadog Service Catalog Metadata Provider
+      uses: arcxp/datadog-service-catalog-metadata-provider@v2.1.0
+      with:
+        datadog-hostname: api.datadoghq.com
+        datadog-key: ${{ secrets.DD_API_KEY }}
+        datadog-app-key: ${{ secrets.DD_APP_KEY }}
+        schema-version: v2
+        service-name: fargate-python, postrequest
+        team: SRE
+        email: jonathan.lim@datadoghq.com
+
+  dora_deployment_frequency:
+    name: DORA - Deployment Frequency via dd cli
+    runs-on: ubuntu-latest
+    needs: build_test_push
+    steps:
+    - uses: actions/checkout@v2     
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14' # Specify the Node.js version you need
+
+    - name: Install Datadog CI dependency
+      run: npm install --save-dev @datadog/datadog-ci
+
+    - name: Set up environment variables
+      run: |
+        echo "DD_BETA_COMMANDS_ENABLED=1" >> $GITHUB_ENV
+        echo "DD_SITE=datadoghq.com" >> $GITHUB_ENV
+        echo "DD_API_KEY=${{ secrets.DD_API_KEY }}" >> $GITHUB_ENV
+        
+    - name: Set Git Commit SHA
+      id: git_commit_sha
+      run: echo "git_commit_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV        
+
+    - name: Set deploy finish time
+      id: deploy_finish
+      run: echo "deploy_finish=$(date +%s)" >> $GITHUB_ENV
+
+    - name: Report deployment to Datadog
+      env:
+        DEPLOY_START: ${{ needs.build_test_push.outputs.deploy-start }} # using env variable from previous job
+        DEPLOY_FINISH: ${{ env.deploy_finish }}
+        GIT_COMMIT_SHA: ${{ env.git_commit_sha }}
+      run: |
+        npx datadog-ci dora deployment --service fargate-python --env fargate-ecs \
+          --started-at $DEPLOY_START --finished-at $DEPLOY_FINISH \
+          --git-repository-url "https://github.com/jon94/fargatepythonbackend" \
+          --git-commit-sha $GIT_COMMIT_SHA
+
