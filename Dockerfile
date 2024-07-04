@@ -14,12 +14,11 @@ COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
 # Install ddtrace to a specific target directory
 RUN pip install --target /dd_tracer/python/ ddtrace
 
-# Debugging step to verify file exists
-RUN ls /app
-# RUN chmod +x /app/datadog-init
-
 # Copy the rest of the application code
 COPY . .
+
+# Copy the JSON file into the /home/asm/ directory
+COPY yourfile.json /home/asm/yourfile.json
 
 # Set environment variables
 ENV FLASK_APP=application.py
@@ -38,6 +37,3 @@ ENV DD_TAGS="git.repository_url:github.com/jon94/cloudrunpythonbe,git.commit.sha
 # Entry point and command to run the application
 ENTRYPOINT ["/app/datadog-init"]
 CMD ["/dd_tracer/python/bin/ddtrace-run", "python", "application.py"]
-
-# Entry point and command to run the application
-# CMD ["python", "application.py"]
