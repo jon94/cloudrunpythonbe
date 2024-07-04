@@ -18,7 +18,7 @@ RUN pip install --target /dd_tracer/python/ ddtrace
 COPY . .
 
 # Copy the JSON file into the /home/asm/ directory
-COPY yourfile.json /home/asm/yourfile.json
+COPY appsec-rules.json /home/asm/appsec-rules.json
 
 # Set environment variables
 ENV FLASK_APP=application.py
