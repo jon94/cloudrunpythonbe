@@ -30,6 +30,7 @@ ENV DD_SERVICE=cloudrun-python
 ENV DD_ENV=cloudrun
 ENV DD_APPSEC_ENABLED=1
 ENV DD_VERSION=1
+ENV DD_REMOTE_CONFIGURATION_ENABLED=false
 ENV DD_APPSEC_RULES=/home/asm/appsec-rules.json
 
 # Expose the application port
