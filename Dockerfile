@@ -20,6 +20,10 @@ COPY . .
 # Copy the JSON file into the /home/asm/ directory
 COPY appsec-rules.json /home/asm/appsec-rules.json
 
+RUN pwd
+
+RUN ls /home/asm
+
 # Set environment variables
 ENV FLASK_APP=application.py
 ENV DD_SERVICE=cloudrun-python
