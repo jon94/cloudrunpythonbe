@@ -8406,7 +8406,7 @@
                                 "address": "server.request.body"
                             }
                         ],
-                        "regex": "test"
+                        "regex": "\\btest\\b"
                     }
                 }
             ],
